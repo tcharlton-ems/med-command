@@ -4,7 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MedCommand EMS Protocols</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+<script src="/vendor/marked.min.js"></script>
+<script src="/vendor/purify.min.js"></script>
 <style>
   :root {
     --bg: #0a0e1a;
@@ -55,26 +56,47 @@
   /* ── Layout ── */
   #app { display: flex; flex-direction: column; min-height: 100vh; }
   #topbar {
-    display: flex; align-items: center; gap: 12px;
+    display: flex; align-items: center; gap: 10px;
     background: var(--bg2); border-bottom: 1px solid var(--border);
-    padding: 0 16px; height: 56px; position: sticky; top: 0; z-index: 100;
+    padding: 0 12px; height: 56px; position: sticky; top: 0; z-index: 100;
     box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+    flex-wrap: nowrap;
   }
-  #topbar .logo { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1.1rem; letter-spacing: 0.5px; }
+  #topbar .logo {
+    display: flex; align-items: center; gap: 6px;
+    font-weight: 700; font-size: 1.05rem; letter-spacing: 0.3px;
+    flex-shrink: 0; white-space: nowrap;
+  }
   #topbar .logo span { color: var(--accent); }
-  #topbar .logo .cross { font-size: 1.4rem; color: var(--red); }
-  #menu-btn { display: none; background: none; border: none; color: var(--text); font-size: 1.4rem; cursor: pointer; padding: 4px 8px; }
+  #topbar .logo .cross { font-size: 1.3rem; color: var(--red); }
+  #menu-btn {
+    display: none; background: none; border: none; color: var(--text);
+    font-size: 1.4rem; cursor: pointer; padding: 4px 6px; flex-shrink: 0;
+  }
   #search-bar {
-    flex: 1; max-width: 400px; margin: 0 auto;
+    flex: 1; min-width: 0;
     background: var(--bg3); border: 1px solid var(--border);
-    border-radius: 24px; padding: 6px 16px; color: var(--text);
+    border-radius: 24px; padding: 7px 14px; color: var(--text);
     font-size: 0.9rem; outline: none; transition: border-color 0.2s;
   }
   #search-bar:focus { border-color: var(--accent); }
   #search-bar::placeholder { color: var(--text3); }
-  .topbar-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
-  .icon-btn { background: none; border: none; color: var(--text2); font-size: 1.2rem; cursor: pointer; padding: 6px; border-radius: 6px; transition: color 0.2s, background 0.2s; }
+  .topbar-actions {
+    display: flex; align-items: center; gap: 4px; flex-shrink: 0;
+  }
+  .icon-btn {
+    background: none; border: none; color: var(--text2); font-size: 1.2rem;
+    cursor: pointer; padding: 6px; border-radius: 6px;
+    transition: color 0.2s, background 0.2s; flex-shrink: 0;
+  }
   .icon-btn:hover { color: var(--text); background: var(--bg3); }
+
+  /* Server badge — full text on desktop, dot only on mobile */
+  #server-badge { font-size: 0.75rem; cursor: default; flex-shrink: 0; }
+  #server-badge .badge-dot {
+    display: none; width: 9px; height: 9px; border-radius: 50%;
+    background: var(--yellow);
+  }
 
   #main { display: flex; flex: 1; }
   #sidebar {
@@ -335,8 +357,69 @@
   #toast.show { transform: translateY(0); opacity: 1; }
 
   /* ── Responsive ── */
-  @media (max-width: 768px) {
+  @media (max-width: 600px) {
+    /* Two-row topbar on mobile */
+    #topbar {
+      height: auto;
+      flex-wrap: wrap;
+      padding: 0;
+      gap: 0;
+    }
+
+    /* Row 1: menu + logo + action icons */
+    #topbar-row1 {
+      display: flex; align-items: center;
+      width: 100%; padding: 8px 10px; gap: 6px;
+    }
+
+    /* Row 2: search bar full width */
+    #topbar-row2 {
+      display: flex; width: 100%;
+      padding: 0 10px 8px; gap: 0;
+    }
+    #topbar-row2 #search-bar {
+      width: 100%; max-width: 100%;
+      border-radius: 20px; font-size: 1rem;
+      padding: 9px 14px;
+    }
+
+    /* Sidebar offset to account for taller topbar */
+    #sidebar {
+      position: fixed; left: 0; top: 0; bottom: 0; z-index: 200;
+      transform: translateX(-100%); width: 82vw; max-width: 300px;
+      height: 100vh;
+    }
+    #sidebar.open {
+      transform: translateX(0);
+      box-shadow: 4px 0 24px rgba(0,0,0,0.6);
+    }
+
     #menu-btn { display: flex; }
+
+    /* Hide the logo text "Command" on very small screens, keep "Med✚" */
+    .logo-text-full { display: none; }
+    .logo-text-short { display: inline; }
+
+    /* Server badge: show colored dot only, no text */
+    #server-badge .badge-text { display: none; }
+    #server-badge .badge-dot  { display: inline-block; }
+    #server-badge { background: none !important; border: none !important; padding: 0 2px !important; }
+
+    /* Icon buttons slightly larger touch targets */
+    .icon-btn { padding: 8px; font-size: 1.25rem; }
+
+    #content { padding: 12px; }
+    .protocol-grid { grid-template-columns: 1fr; }
+    .calc-grid { grid-template-columns: 1fr; }
+    .home-header { padding: 16px; }
+    .home-header h1 { font-size: 1.3rem; }
+  }
+
+  /* Tablets (sidebar slides, search stays in one row) */
+  @media (min-width: 601px) and (max-width: 900px) {
+    #menu-btn { display: flex; }
+    #topbar-row1 { display: contents; }
+    #topbar-row2 { display: contents; }
     #sidebar {
       position: fixed; left: 0; top: 56px; bottom: 0; z-index: 200;
       transform: translateX(-100%); width: 280px;
@@ -345,7 +428,13 @@
     #content { padding: 16px; }
     .protocol-grid { grid-template-columns: 1fr; }
     .calc-grid { grid-template-columns: 1fr; }
-    #search-bar { max-width: 100%; }
+  }
+
+  /* Desktop: topbar rows are display:contents so items flow normally */
+  @media (min-width: 901px) {
+    #topbar-row1 { display: contents; }
+    #topbar-row2 { display: contents; }
+    #search-bar { max-width: 420px; margin: 0 auto; }
   }
 
   /* Scrollbar */
@@ -366,16 +455,27 @@
 <body>
 
 <div id="app">
-  <!-- TOP BAR -->
+  <!-- TOP BAR — row 1: menu + logo + actions, row 2 (mobile only): search -->
   <div id="topbar">
-    <button id="menu-btn" onclick="toggleSidebar()">☰</button>
-    <div class="logo"><span class="cross">✚</span> <span>Med</span>Command</div>
-    <input type="text" id="search-bar" placeholder="Search protocols, medications, procedures…" oninput="handleSearch(this.value)">
-    <div class="topbar-actions">
-      <span id="server-badge" class="badge badge-orange" style="font-size:0.75rem;cursor:default;" title="Checking server…">⏳ Connecting</span>
-      <button class="icon-btn" onclick="toggleTheme()" title="Toggle Day/Night">🌙</button>
-      <button class="icon-btn" onclick="showPage('bookmarks')" title="Bookmarks">⭐</button>
-      <button class="icon-btn" onclick="openAdminLogin()" title="Admin Settings">⚙️</button>
+    <div id="topbar-row1">
+      <button id="menu-btn" onclick="toggleSidebar()">☰</button>
+      <div class="logo">
+        <span class="cross">✚</span>
+        <span><span class="logo-text-short" style="display:none">Med</span><span class="logo-text-full">Med</span><span style="color:var(--accent)">Command</span></span>
+      </div>
+      <input type="text" id="search-bar" placeholder="Search protocols…" oninput="handleSearch(this.value)" style="display:none">
+      <div class="topbar-actions">
+        <span id="server-badge" class="badge badge-orange" title="Checking server…">
+          <span class="badge-dot" style="background:var(--yellow)"></span>
+          <span class="badge-text">⏳ Connecting</span>
+        </span>
+        <button class="icon-btn" onclick="toggleTheme()" title="Toggle Day/Night">🌙</button>
+        <button class="icon-btn" onclick="showPage('bookmarks')" title="Bookmarks">⭐</button>
+        <button class="icon-btn" onclick="openAdminLogin()" title="Admin Settings">⚙️</button>
+      </div>
+    </div>
+    <div id="topbar-row2">
+      <input type="text" id="search-bar-mobile" placeholder="Search protocols, medications…" oninput="handleSearch(this.value)">
     </div>
   </div>
 
@@ -746,14 +846,32 @@ async function loadState() {
 function updateServerBadge(online) {
   const el = document.getElementById('server-badge');
   if (!el) return;
+  const dot  = el.querySelector('.badge-dot');
+  const text = el.querySelector('.badge-text');
   if (online) {
-    el.textContent = '🟢 Server';
+    if (dot)  { dot.style.background = 'var(--green)'; }
+    if (text) { text.textContent = '🟢 Server'; }
     el.title = 'Connected to MedCommand server — changes sync to all devices';
     el.style.color = 'var(--green)';
+    el.className = 'badge badge-green';
   } else {
-    el.textContent = '🟡 Local';
+    if (dot)  { dot.style.background = 'var(--yellow)'; }
+    if (text) { text.textContent = '🟡 Local'; }
     el.title = 'Running in standalone mode — changes saved to this browser only';
     el.style.color = 'var(--yellow)';
+    el.className = 'badge badge-orange';
+  }
+}
+
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  sb.classList.toggle('open');
+  // On mobile, fix the sidebar top to account for the two-row topbar height
+  if (window.innerWidth <= 600) {
+    sb.style.top = '0';
+  } else {
+    const topbarH = document.getElementById('topbar').offsetHeight;
+    sb.style.top = topbarH + 'px';
   }
 }
 
@@ -1296,7 +1414,7 @@ function toggleSidebar() {
 function renderSetSelector() {
   const sel = document.getElementById('protocol-set-select');
   sel.innerHTML = state.sets.map(s =>
-    `<option value="${s.id}" ${s.id === state.activeSet ? 'selected' : ''}>${s.name}</option>`
+    `<option value="${esc(s.id)}" ${s.id === state.activeSet ? 'selected' : ''}>${esc(s.name)}</option>`
   ).join('');
 }
 
@@ -1317,9 +1435,9 @@ function renderTagNav() {
     (p.tags || []).forEach(t => { counts[t] = (counts[t] || 0) + 1; });
   });
   container.innerHTML = state.tags.map(t => `
-    <button class="nav-item ${activeTagFilter === t.id ? 'active' : ''}" onclick="filterByTag('${t.id}')">
+    <button class="nav-item ${activeTagFilter === t.id ? 'active' : ''}" onclick="filterByTag('${esc(t.id)}')">
       <span class="tag-dot" style="background:${t.color}"></span>
-      ${t.name}
+      ${esc(t.name)}
       <span class="count">${counts[t.id] || 0}</span>
     </button>
   `).join('');
@@ -1328,9 +1446,9 @@ function renderTagNav() {
 function renderLevelNav() {
   const container = document.getElementById('level-filter-nav');
   container.innerHTML = state.levels.map(l => `
-    <button class="nav-item ${activeLevelFilter === l.id ? 'active' : ''}" onclick="filterByLevel('${l.id}')">
+    <button class="nav-item ${activeLevelFilter === l.id ? 'active' : ''}" onclick="filterByLevel('${esc(l.id)}')">
       <span class="tag-dot" style="background:${l.color}"></span>
-      ${l.name}
+      ${esc(l.name)}
     </button>
   `).join('');
 }
@@ -1387,7 +1505,7 @@ function renderHome() {
     return `
       <div class="section-title">
         <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${tag.color};"></span>
-        ${tag.name}
+        ${esc(tag.name)}
       </div>
       <div class="protocol-grid">${cards}</div>
     `;
@@ -1405,17 +1523,17 @@ function renderHome() {
 
 function renderProtocolCard(p) {
   const level = state.levels.find(l => l.id === p.level);
-  const levelBadge = level ? `<span class="level-badge" style="background:${level.color}22;color:${level.color};border:1px solid ${level.color}44;">${level.name}</span>` : '';
+  const levelBadge = level ? `<span class="level-badge" style="background:${level.color}22;color:${level.color};border:1px solid ${level.color}44;">${esc(level.name)}</span>` : '';
   const tagBadges = (p.tags || []).map(tId => {
     const t = state.tags.find(t => t.id === tId);
-    return t ? `<span class="tag-badge" style="border-color:${t.color}44;color:${t.color};">${t.name}</span>` : '';
+    return t ? `<span class="tag-badge" style="border-color:${t.color}44;color:${t.color};">${esc(t.name)}</span>` : '';
   }).join('');
   const isBookmarked = state.bookmarks.includes(p.id);
   const level0 = state.levels.find(l => l.id === p.level);
   const borderColor = level0 ? level0.color : 'var(--border)';
   return `
-    <div class="protocol-card" onclick="openProtocol('${p.id}')" style="border-left-color:${borderColor};">
-      <div class="card-title">${p.title}</div>
+    <div class="protocol-card" onclick="openProtocol('${esc(p.id)}')" style="border-left-color:${borderColor};">
+      <div class="card-title">${esc(p.title)}</div>
       <div class="card-meta">${levelBadge}${tagBadges}</div>
       <span class="bookmark-star ${isBookmarked ? 'active' : ''}" data-id="${p.id}">★</span>
     </div>
@@ -1431,12 +1549,12 @@ function openProtocol(id) {
   document.getElementById('detail-title').textContent = p.title;
 
   const level = state.levels.find(l => l.id === p.level);
-  const levelBadge = level ? `<span class="level-badge" style="background:${level.color}22;color:${level.color};border:1px solid ${level.color}44;">${level.name}</span>` : '';
+  const levelBadge = level ? `<span class="level-badge" style="background:${level.color}22;color:${level.color};border:1px solid ${level.color}44;">${esc(level.name)}</span>` : '';
   const tagBadges = (p.tags || []).map(tId => {
     const t = state.tags.find(t => t.id === tId);
-    return t ? `<span class="tag-badge" style="border-color:${t.color}44;color:${t.color};">${t.name}</span>` : '';
+    return t ? `<span class="tag-badge" style="border-color:${t.color}44;color:${t.color};">${esc(t.name)}</span>` : '';
   }).join('');
-  const revised = p.revised ? `<span style="color:var(--text3);font-size:0.8rem;">Revised: ${p.revised}</span>` : '';
+  const revised = p.revised ? `<span style="color:var(--text3);font-size:0.8rem;">Revised: ${esc(p.revised)}</span>` : '';
   document.getElementById('detail-meta').innerHTML = levelBadge + tagBadges + revised;
 
   const bodyEl = document.getElementById('detail-body');
@@ -1448,6 +1566,30 @@ function openProtocol(id) {
   });
 
   showPage('protocol');
+}
+
+// Escape a string for safe interpolation into innerHTML templates.
+function esc(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+// Sanitize rendered markdown before it reaches innerHTML. Protocol content
+// can originate from imported Word/Markdown files, so it is not trusted HTML.
+// Called after fixProtocolLinks so protocol: links (already converted to
+// data attributes) survive sanitization.
+function sanitizeHtml(html) {
+  return DOMPurify.sanitize(html);
+}
+
+// Pick black or white text for readable contrast against an arbitrary
+// user-configured background color (skill-level colors are freely chosen
+// in Settings and can be light, e.g. yellow, where white text fails contrast).
+function contrastText(hex) {
+  const c = (hex || '#888888').replace('#', '');
+  const r = parseInt(c.substr(0, 2), 16), g = parseInt(c.substr(2, 2), 16), b = parseInt(c.substr(4, 2), 16);
+  const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+  return yiq >= 128 ? '#111318' : '#fff';
 }
 
 // ── Core renderer: splits on ::: fences, renders each chunk, assembles HTML ──
@@ -1517,22 +1659,22 @@ function renderProtocolContent(md) {
   if (usedLevels.length) {
     const items = usedLevels.map(lid => {
       const lvl = state.levels.find(l => l.id.toLowerCase() === lid) || { name: lid, color: '#888' };
-      return `<span class="skill-legend-item"><span class="skill-legend-dot" style="background:${lvl.color};"></span>${lvl.name}</span>`;
+      return `<span class="skill-legend-item"><span class="skill-legend-dot" style="background:${lvl.color};"></span>${esc(lvl.name)}</span>`;
     }).join('');
     html += `<div class="skill-legend"><strong style="margin-right:6px;color:var(--text2);">Skill Levels:</strong>${items}</div>`;
   }
 
   // Render chunks
   for (const chunk of chunks) {
-    const renderedMd = fixProtocolLinks(marked.parse(chunk.text));
+    const renderedMd = sanitizeHtml(fixProtocolLinks(marked.parse(chunk.text)));
     if (chunk.type === 'plain') {
       html += renderedMd;
     } else {
       const lvl = state.levels.find(l => l.id.toLowerCase() === chunk.levelId) || { name: chunk.levelId.toUpperCase(), color: '#888888' };
       html += `
         <div class="skill-section" style="border-left-color:${lvl.color};">
-          <div class="skill-section-header" style="background:${lvl.color};">
-            <span class="skill-icon">🏥</span>${lvl.name} Scope
+          <div class="skill-section-header" style="background:${lvl.color};color:${contrastText(lvl.color)};">
+            <span class="skill-icon">🏥</span>${esc(lvl.name)} Scope
           </div>
           <div class="skill-section-body">${renderedMd}</div>
         </div>`;
@@ -1584,7 +1726,16 @@ function showPage(page) {
 // SEARCH
 // ══════════════════════════════════════════════════
 function handleSearch(query) {
-  if (query.trim()) showPage('search');
+  // Keep both search bars in sync
+  const bar1 = document.getElementById('search-bar');
+  const bar2 = document.getElementById('search-bar-mobile');
+  if (bar1 && bar1.value !== query) bar1.value = query;
+  if (bar2 && bar2.value !== query) bar2.value = query;
+
+  // Guard against showPage↔handleSearch mutual recursion: showPage('search')
+  // re-invokes handleSearch when a query is present, so only navigate if we
+  // aren't already on the search page.
+  if (query.trim() && currentPage !== 'search') showPage('search');
   const list = document.getElementById('search-results-list');
   if (!query.trim()) {
     list.innerHTML = '<div class="no-results">Start typing to search protocols…</div>';
@@ -1597,16 +1748,16 @@ function handleSearch(query) {
     (p.tags || []).some(t => t.includes(q))
   );
   if (!results.length) {
-    list.innerHTML = '<div class="no-results">No protocols found for "' + query + '"</div>';
+    list.innerHTML = '<div class="no-results">No protocols found for "' + esc(query) + '"</div>';
     return;
   }
   list.innerHTML = results.map(p => {
     const snippet = getSnippet(p.content || '', q);
     const level = state.levels.find(l => l.id === p.level);
     return `
-      <div class="search-item" onclick="openProtocol('${p.id}')">
+      <div class="search-item" onclick="openProtocol('${esc(p.id)}')">
         <h4>${highlight(p.title, q)}</h4>
-        ${level ? `<span class="level-badge" style="background:${level.color}22;color:${level.color};font-size:0.7rem;padding:1px 6px;border-radius:4px;">${level.name}</span>` : ''}
+        ${level ? `<span class="level-badge" style="background:${level.color}22;color:${level.color};font-size:0.7rem;padding:1px 6px;border-radius:4px;">${esc(level.name)}</span>` : ''}
         <p style="margin-top:6px;">${snippet}</p>
       </div>
     `;
@@ -1616,16 +1767,18 @@ function handleSearch(query) {
 function getSnippet(text, query) {
   const plain = text.replace(/[#*`>|\-\[\]]/g, ' ').replace(/\s+/g, ' ');
   const idx = plain.toLowerCase().indexOf(query);
-  if (idx < 0) return plain.slice(0, 120) + '…';
+  if (idx < 0) return esc(plain.slice(0, 120)) + '…';
   const start = Math.max(0, idx - 40);
   const end = Math.min(plain.length, idx + 80);
   return (start > 0 ? '…' : '') + highlight(plain.slice(start, end), query) + (end < plain.length ? '…' : '');
 }
 
+// HTML-escapes the text, then wraps query matches — output is innerHTML-safe.
 function highlight(text, query) {
-  if (!query) return text;
-  const re = new RegExp('(' + query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
-  return text.replace(re, '<span class="search-highlight">$1</span>');
+  const safe = esc(text);
+  if (!query) return safe;
+  const re = new RegExp('(' + esc(query).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+  return safe.replace(re, '<span class="search-highlight">$1</span>');
 }
 
 // ══════════════════════════════════════════════════
@@ -1868,9 +2021,9 @@ function renderAdminPage() {
   const setList = document.getElementById('set-list');
   setList.innerHTML = state.sets.map(s => `
     <div class="level-item">
-      <div class="level-name">${s.name}</div>
-      ${s.url ? `<span style="font-size:0.78rem;color:var(--text3);">${s.url}</span>` : ''}
-      <button class="tag-remove" onclick="removeSet('${s.id}')">✕</button>
+      <div class="level-name">${esc(s.name)}</div>
+      ${s.url ? `<span style="font-size:0.78rem;color:var(--text3);">${esc(s.url)}</span>` : ''}
+      <button class="tag-remove" onclick="removeSet('${esc(s.id)}')">✕</button>
     </div>
   `).join('');
 
@@ -1878,8 +2031,8 @@ function renderAdminPage() {
   document.getElementById('admin-tag-list').innerHTML = state.tags.map(t => `
     <div class="tag-item">
       <span class="color-dot" style="background:${t.color};"></span>
-      ${t.name}
-      <button class="tag-remove" onclick="removeTag('${t.id}')">✕</button>
+      ${esc(t.name)}
+      <button class="tag-remove" onclick="removeTag('${esc(t.id)}')">✕</button>
     </div>
   `).join('');
 
@@ -1887,27 +2040,27 @@ function renderAdminPage() {
   document.getElementById('admin-levels-list').innerHTML = state.levels.map(l => `
     <div class="level-item">
       <span class="level-color-box" style="background:${l.color};" title="Color"></span>
-      <span class="level-name">${l.name}</span>
-      <button class="tag-remove" onclick="removeLevel('${l.id}')">✕</button>
+      <span class="level-name">${esc(l.name)}</span>
+      <button class="tag-remove" onclick="removeLevel('${esc(l.id)}')">✕</button>
     </div>
   `).join('');
 
   // Protocol list
   const pl = document.getElementById('admin-protocol-list');
   pl.innerHTML = state.protocols.map(p => `
-    <div class="admin-protocol-item" onclick="openProtocolEditor('${p.id}')">
-      <span style="flex:1;">${p.title}</span>
-      <span style="font-size:0.75rem;color:var(--text3);">${state.sets.find(s=>s.id===p.setId)?.name || ''}</span>
+    <div class="admin-protocol-item" onclick="openProtocolEditor('${esc(p.id)}')">
+      <span style="flex:1;">${esc(p.title)}</span>
+      <span style="font-size:0.75rem;color:var(--text3);">${esc(state.sets.find(s=>s.id===p.setId)?.name || '')}</span>
     </div>
   `).join('');
 
   // Update set selector in editor
   const editSetSel = document.getElementById('edit-prot-set');
-  editSetSel.innerHTML = state.sets.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+  editSetSel.innerHTML = state.sets.map(s => `<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('');
 
   // Level selector
   const editLvl = document.getElementById('edit-prot-level');
-  editLvl.innerHTML = state.levels.map(l => `<option value="${l.id}">${l.name}</option>`).join('');
+  editLvl.innerHTML = state.levels.map(l => `<option value="${esc(l.id)}">${esc(l.name)}</option>`).join('');
 }
 
 async function addProtocolSet() {
@@ -2028,9 +2181,9 @@ function openProtocolEditor(id) {
   editingProtocolId = id;
   const modal = document.getElementById('editor-modal');
   const editSetSel = document.getElementById('edit-prot-set');
-  editSetSel.innerHTML = state.sets.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+  editSetSel.innerHTML = state.sets.map(s => `<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('');
   const editLvl = document.getElementById('edit-prot-level');
-  editLvl.innerHTML = state.levels.map(l => `<option value="${l.id}">${l.name}</option>`).join('');
+  editLvl.innerHTML = state.levels.map(l => `<option value="${esc(l.id)}">${esc(l.name)}</option>`).join('');
 
   if (id) {
     const p = state.protocols.find(pr => pr.id === id);
@@ -2193,7 +2346,11 @@ document.querySelectorAll('.calc-modal').forEach(m => {
 document.addEventListener('keydown', e => {
   if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
     e.preventDefault();
-    document.getElementById('search-bar').focus();
+    // Focus whichever search bar is visible
+    const mob = document.getElementById('search-bar-mobile');
+    const desk = document.getElementById('search-bar');
+    if (mob && mob.offsetParent !== null) mob.focus();
+    else if (desk) desk.focus();
   }
   if (e.key === 'Escape') {
     closeCalc(); closeEditor(); closeAdminLogin();
